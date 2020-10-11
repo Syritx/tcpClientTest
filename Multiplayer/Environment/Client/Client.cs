@@ -4,7 +4,7 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 
-namespace OpenGL.Environment.Client.Game
+namespace Multiplayer.Environment.Client
 {
     class Client
     {
