@@ -8,7 +8,7 @@ namespace Multiplayer.Environment.Client
 {
     class Client
     {
-        // run two of instances of the client (AFTER THE SERVER)
+        // run two of instances of the client using the command: dotnet run Client.cs
         static IPAddress ip = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0];
         static TcpClient client;
         static NetworkStream stream;
@@ -17,7 +17,7 @@ namespace Multiplayer.Environment.Client
         {
             client = new TcpClient(ip.ToString(), 5050);
 
-            string message = "i am a client that connected to the server";
+            string message = "[CO-NNE_CT3D-TO_$ER_VER}"; // encrypted to people can't guess
             byte[] messageBytes = Encoding.UTF8.GetBytes(message);
 
             stream = client.GetStream();
@@ -30,22 +30,36 @@ namespace Multiplayer.Environment.Client
         {
             if (string.IsNullOrEmpty(message)) return;
 
+            IPEndPoint iPEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
+            message = "["+iPEndPoint.Address+", "+iPEndPoint.Port+"]: " + message;
+
             byte[] bytes = Encoding.UTF8.GetBytes(message);
             NetworkStream str = client.GetStream();
             str.Write(bytes, 0, bytes.Length);
         }
 
-        static void StayConnected()
-        {
+        static void ReceiveMessages() {
             while (true) {
                 byte[] data = new byte[2048];
 
                 int response = stream.Read(data, 0, data.Length);
                 string responseData = Encoding.ASCII.GetString(data, 0, response);
                 Console.WriteLine(responseData);
+            }
+        }
 
+        static void SendMessages(){
+            while (true) {
                 sendMessage(Console.ReadLine());
             }
+        }
+
+        static void StayConnected()
+        {
+            Task messages = Task.Factory.StartNew(SendMessages);
+            Task receiver = Task.Factory.StartNew(ReceiveMessages);
+
+            Task.WaitAll(messages,receiver);
         }
 
         ~Client()
