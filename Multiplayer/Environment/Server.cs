@@ -10,9 +10,8 @@ namespace Multiplayer.Environment.Server
     class Server
     {
         // run the server first
-        static Socket server;
         static List<Socket> clients;
-
+        static ClientCommands clientCommands = new ClientCommands();
 
         static IPAddress ip = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0];
         static int port = 5050;
@@ -35,26 +34,35 @@ namespace Multiplayer.Environment.Server
         }
 
         static void clientThread(Socket client) {
-            string message = "welcome", notificationMessage = "message has been heard\n";
+            string message = "welcome\n";
 
-            byte[] messageBytes = Encoding.UTF8.GetBytes(message),
-                   notifcationMessageBytes = Encoding.UTF8.GetBytes(notificationMessage);
+            byte[] messageBytes = Encoding.UTF8.GetBytes(message);
 
             byte[] bytes = new byte[2048];
 
-            int i = client.Send(messageBytes);
+            client.Send(messageBytes);
             Console.WriteLine("sent message to client");
             IPEndPoint clientEndPoint = client.RemoteEndPoint as IPEndPoint;
 
             while (client.Connected) {
                 bytes = new byte[2048];
-                i = client.Receive(bytes);
+                int i = client.Receive(bytes);
+                bool canSendMessage = true;
+
+                foreach (string cmd in clientCommands.startMessages) {
+                    if (cmd == Encoding.UTF8.GetString(bytes)) canSendMessage = false;
+                }
 
                 Console.WriteLine("[{0}, {1}] SENT: {2}",clientEndPoint.Address,
                                                     clientEndPoint.Port,
                                                     Encoding.UTF8.GetString(bytes));
 
-                client.Send(notifcationMessageBytes);
+                foreach(Socket clientSocket in clients) {
+                    if (clientSocket != client && canSendMessage) {
+                        try { clientSocket.Send(bytes); }
+                        catch (Exception e) { clients.Remove(clientSocket); }
+                    }
+                }
             }
             clients.Remove(client);
         }
