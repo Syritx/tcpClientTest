@@ -37,7 +37,6 @@ namespace OpenGL.Environment.Client.Game
 
         static void StayConnected()
         {
-            //new GameUI(1000, 720, "multiplayer");
             while (true) {
                 byte[] data = new byte[2048];
 
